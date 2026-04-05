@@ -3,6 +3,7 @@ export interface AppMetrics {
   totalScans: number;
   activeLocations: number;
   costEstimate: { monthly: number; perCity: number } | null;
+  costThisMonth: number;
 }
 
 export async function fetchAppMetrics(
@@ -26,6 +27,7 @@ export async function fetchAppMetrics(
       costEstimate: cost
         ? { monthly: cost.totalMonthly, perCity: cost.perCity }
         : null,
+      costThisMonth: cost?.totalCostThisMonth ?? 0,
     };
   } catch {
     return null;

@@ -3,6 +3,7 @@ import { getApp } from "@/lib/apps-config";
 import { checkHealth } from "@/lib/api/health";
 import { fetchSentryErrorCount } from "@/lib/api/sentry";
 import { fetchLatestDeploy } from "@/lib/api/render";
+import { fetchAppMetrics } from "@/lib/api/app-metrics";
 
 export async function GET(
   _req: Request,
@@ -14,7 +15,7 @@ export async function GET(
     return NextResponse.json({ error: "App not found" }, { status: 404 });
   }
 
-  const [healthResult, errors24h, deploy] = await Promise.all([
+  const [healthResult, errors24h, deploy, metrics] = await Promise.all([
     app.services.backend
       ? checkHealth(app.services.backend.healthUrl)
       : Promise.resolve(null),
@@ -24,6 +25,7 @@ export async function GET(
     app.services.backend?.renderServiceId
       ? fetchLatestDeploy(app.services.backend.renderServiceId)
       : Promise.resolve(null),
+    app.apiBase ? fetchAppMetrics(app.apiBase) : Promise.resolve(null),
   ]);
 
   return NextResponse.json({
@@ -31,5 +33,6 @@ export async function GET(
     latencyMs: healthResult?.latencyMs ?? null,
     errors24h,
     lastDeploy: deploy?.createdAt ?? null,
+    costThisMonth: metrics?.costThisMonth ?? null,
   });
 }

@@ -12,6 +12,7 @@ export interface AppConfig {
     project: string;
   };
   apiBase?: string; // for app-specific metrics
+  fixedCosts?: { name: string; cost: number; note: string }[];
 }
 
 export const apps: AppConfig[] = [
@@ -35,6 +36,12 @@ export const apps: AppConfig[] = [
       project: "simeopsbackend",
     },
     apiBase: "https://simeops-backend.onrender.com",
+    fixedCosts: [
+      { name: "Servidores (Render)", cost: 14.0, note: "Backend + Admin" },
+      { name: "Monitoramento de erros", cost: 29.0, note: "Rastreamento em tempo real" },
+      { name: "Banco de dados", cost: 0.0, note: "Supabase Free" },
+      { name: "Cache/Fila", cost: 0.0, note: "Upstash Redis Free" },
+    ],
   },
 ];
 

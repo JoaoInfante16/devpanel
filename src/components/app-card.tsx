@@ -6,11 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import type { AppConfig } from "@/lib/apps-config";
 
+function usd(value: number): string {
+  return value.toFixed(2).replace(".", ",");
+}
+
 interface AppCardData {
   health: "online" | "offline" | "loading";
   errors24h: number | null;
   lastDeploy: string | null;
   latencyMs: number | null;
+  costThisMonth: number | null;
 }
 
 export function AppCard({ app }: { app: AppConfig }) {
@@ -19,7 +24,10 @@ export function AppCard({ app }: { app: AppConfig }) {
     errors24h: null,
     lastDeploy: null,
     latencyMs: null,
+    costThisMonth: null,
   });
+
+  const fixedTotal = (app.fixedCosts || []).reduce((s, c) => s + c.cost, 0);
 
   useEffect(() => {
     async function load() {
@@ -55,7 +63,7 @@ export function AppCard({ app }: { app: AppConfig }) {
           <p className="text-xs text-muted-foreground mb-3">
             {app.description}
           </p>
-          <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="grid grid-cols-4 gap-2 text-center">
             <Stat
               label="Erros 24h"
               value={data.errors24h !== null ? String(data.errors24h) : "—"}
@@ -63,17 +71,19 @@ export function AppCard({ app }: { app: AppConfig }) {
             />
             <Stat
               label="Latencia"
+              value={data.latencyMs !== null ? `${data.latencyMs}ms` : "—"}
+            />
+            <Stat
+              label="Custo/mes"
               value={
-                data.latencyMs !== null ? `${data.latencyMs}ms` : "—"
+                data.costThisMonth !== null
+                  ? `$${usd(data.costThisMonth + fixedTotal)}`
+                  : `$${usd(fixedTotal)}`
               }
             />
             <Stat
               label="Deploy"
-              value={
-                data.lastDeploy
-                  ? timeAgo(data.lastDeploy)
-                  : "—"
-              }
+              value={data.lastDeploy ? timeAgo(data.lastDeploy) : "—"}
             />
           </div>
         </CardContent>

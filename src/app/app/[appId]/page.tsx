@@ -14,6 +14,10 @@ import type { HealthResult } from "@/lib/api/health";
 import type { RenderDeploy } from "@/lib/api/render";
 import type { AppMetrics } from "@/lib/api/app-metrics";
 
+function usd(value: number, decimals = 2): string {
+  return value.toFixed(decimals).replace(".", ",");
+}
+
 interface DetailData {
   health: HealthResult | null;
   issues: SentryIssueSummary[];
@@ -26,6 +30,9 @@ export default function AppDetailPage() {
   const app = apps.find((a) => a.id === appId);
   const [data, setData] = useState<DetailData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const fixedCosts = app?.fixedCosts || [];
+  const fixedTotal = fixedCosts.reduce((s, c) => s + c.cost, 0);
 
   useEffect(() => {
     async function load() {
@@ -52,6 +59,8 @@ export default function AppDetailPage() {
     );
   }
 
+  const apiCost = data?.metrics?.costThisMonth ?? 0;
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
@@ -77,6 +86,7 @@ export default function AppDetailPage() {
             )}
           </TabsTrigger>
           <TabsTrigger value="metrics">Metricas</TabsTrigger>
+          <TabsTrigger value="billing">Billing</TabsTrigger>
           <TabsTrigger value="config">Config</TabsTrigger>
         </TabsList>
 
@@ -98,8 +108,8 @@ export default function AppDetailPage() {
               color={data?.issues?.some((i) => i.count > 0) ? "text-destructive" : undefined}
             />
             <StatCard
-              title="Ultimo Deploy"
-              value={data?.deploy?.createdAt ? formatDate(data.deploy.createdAt) : "—"}
+              title="Custo este mes"
+              value={`$${usd(apiCost + fixedTotal)}`}
             />
           </div>
 
@@ -174,14 +184,58 @@ export default function AppDetailPage() {
               value={data?.metrics?.activeLocations ? String(data.metrics.activeLocations) : "—"}
             />
             <StatCard
-              title="Custo mensal"
+              title="Custo estimado/mes"
               value={
                 data?.metrics?.costEstimate
-                  ? `$${data.metrics.costEstimate.monthly.toFixed(2)}`
+                  ? `$${usd(data.metrics.costEstimate.monthly)}`
                   : "—"
               }
             />
           </div>
+        </TabsContent>
+
+        {/* BILLING */}
+        <TabsContent value="billing">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            <StatCard
+              title="Custo API este mes"
+              value={`$${usd(apiCost)}`}
+            />
+            <StatCard
+              title="Custos fixos/mes"
+              value={`$${usd(fixedTotal)}`}
+            />
+            <StatCard
+              title="Total este mes"
+              value={`$${usd(apiCost + fixedTotal)}`}
+              color="text-primary"
+            />
+          </div>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Custos fixos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {fixedCosts.map((item) => (
+                  <div key={item.name} className="flex items-center justify-between text-sm">
+                    <div>
+                      <span>{item.name}</span>
+                      <span className="text-xs text-muted-foreground ml-2">({item.note})</span>
+                    </div>
+                    <span className={`font-mono font-medium ${item.cost > 0 ? "" : "text-muted-foreground"}`}>
+                      ${usd(item.cost)}
+                    </span>
+                  </div>
+                ))}
+                <div className="border-t border-border pt-2 flex justify-between font-medium">
+                  <span>Total fixo</span>
+                  <span className="font-mono">${usd(fixedTotal)}/mes</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* CONFIG */}
